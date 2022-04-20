@@ -33,6 +33,7 @@ int is_asymmetric(pair* relation, int size);
 // A homogeneous relation R on the set X is a transitive relation if:
 // for all x, y, z in X, if xRy and yRz, then xRz
 int is_transitive(pair* relation, int size);
+
 // Case 2:
 // A partial order relation is a homogeneous relation that is
 // reflexive, transitive, and antisymmetric
@@ -45,6 +46,7 @@ int is_connected(pair*, int);
 int find_max_elements(pair*, int, int*);
 int find_min_elements(pair*, int, int*);
 int get_domain(pair*, int, int*);
+
 // Case 3:
 int composition (pair*, int, pair*, int, pair*);
 
@@ -53,6 +55,9 @@ int cmp (pair p1, pair p2) {
 	return p1.first - p2.first;
 }
 
+int cmpfunc (const void * a, const void * b) {
+   return ( *(int*)a - *(int*)b );
+}
 
 void print_int_array(int *array, int n) {
 	printf("%d\n", n);
@@ -127,53 +132,284 @@ int read_relation(pair* relation) {
 }
 
 int is_reflexive(pair* relation, int size) {
-	return 0;
+	
+	int is = 0;
+	for (int i = 0; i < size; i++) {
+		for (int j = 0; j < size; j++) {
+			if ( relation[j].first == relation[j].second && relation[j].first == relation[i].first ) {
+				is = 1;
+			}
+		}
+		if (is == 0) {
+			return 0;
+		}
+		is = 0;
+	}
+
+	return 1;
 }
 
 int is_irreflexive(pair* relation, int size) {
-	return 0;
+	for (int i = 0; i < size; i++) {
+		for (int j = 0; j < size; j++) {
+			if ( relation[j].first == relation[j].second && relation[j].first == relation[i].first ) {
+				return 0;
+			}
+		}
+	}
+	return 1;
 }
 
 int is_symmetric(pair* relation, int size) {
-	return 0;
+	int is = 0;
+	for (int i = 0; i < size; i++) {
+		for (int j = 0; j < size; j++) {
+			if (relation[j].first == relation[i].second && relation[j].second == relation[i].first) {
+				is = 1;
+			}
+		}
+		if ( is == 0 ) {
+			return 0;
+		}
+		is = 0;
+	}
+	return 1;
 }
 
 int is_antisymmetric(pair* relation, int size) {
-	return 0;
+	for (int i = 0; i < size; i++) {
+		for (int j = 0; j < size; j++) {
+			if ( relation[j].first == relation[i].second && relation[j].second == relation[i].first ) {
+				if ( relation[j].first != relation[j].second ) {
+					return 0;
+				}
+			}
+		}
+	}
+	return 1;
 }
 
 int is_asymmetric(pair* relation, int size) {
-	return 0;
+	for (int i = 0; i < size; i++) {
+		for (int j = 0; j < size; j++) {
+			if ( relation[i].first == relation[j].second && relation[i].second == relation[j].first ) {
+				return 0;
+			}
+		}
+	}
+	return 1;
 }
 
 int is_transitive(pair* relation, int size) {
-	return 0;
+	int is = 0;
+	for (int i = 0; i < size; i++) {
+		for (int j = 0; j < size; j++) {
+			if (relation[i].second == relation[j].first) {
+				is = 0;
+				//printf("pierwsza %d R %d   druga %d R %d\n", relation[i].first, relation[i].second, relation[j].first, relation[j].second);
+				for (int k = 0; k < size; k++) {
+					if (relation[i].first == relation[k].first && relation[j].second == relation[k].second) {
+						//printf("I %d R %d\n", relation[k].first, relation[k].second);
+						is = 1;
+					}
+				}
+				if (is == 0) {
+					return 0;
+				}
+
+			}
+		}
+	}
+	return 1;
 }
 
 int is_partial_order(pair* relation, int size) {
+	if( (is_reflexive(relation, size) && is_antisymmetric(relation, size)) && is_transitive(relation, size) ) {
+		return 1;
+	}
 	return 0;
 }
 
+
 int is_total_order(pair* relation, int size) {
+	if (is_partial_order(relation, size) && is_connected(relation, size)) {
+		return 1;
+	}
 	return 0;
 }	
 
-int is_connected(pair* relation, int n) {
-	return 0;
+int is_connected(pair* relation, int size) {
+	int d[MAX_REL_SIZE];
+	int n = get_domain(relation, size, d);
+	int is = 0;
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < n; j++) {
+			if (i != j) {
+				is = 0;
+				for (int k = 0; k < size; k++) {
+					if ( ( relation[k].first == d[i] && relation[k].second==d[j] ) || ( relation[k].first == d[j] && relation[k].second==d[i] ) ) {
+						is = 1;
+						break;
+					}
+				}
+
+				if (is == 0) {
+					return 0;
+				}
+
+			}
+		}
+	}
+
+	return 1;
 }
 
-int find_max_elements(pair* relation, int n, int* a) {
-	return 0;
+int find_max_elements(pair* relation, int size, int* max_elements) {
+	int index = 0, is = 1;
+
+	for (int i = 0; i < size; i++) {
+		is = 1;
+		for (int j = 0; j < size; j++) {
+			if ( relation[i].second == relation[j].first ) {
+				if( relation[i].second < relation[j].second ) {
+					is = 0;
+					break;
+				}
+			}
+		}
+
+		if(is == 1) {
+			for(int j = 0; j < index; j++) {
+				if (relation[i].second == max_elements[j]) {
+					is = 0;
+					break;
+				}
+			}
+			if(is == 1) {
+				max_elements[index] = relation[i].second;
+				index++;
+			}
+		}
+	}
+	qsort(max_elements, index, sizeof(int), cmpfunc);
+	return index;
 }
 
-int find_min_elements(pair* relation, int n, int* a) {
-	return 0;
+int find_min_elements(pair* relation, int size, int* min_elements) {
+	int index = 0, is = 1;
+// 3 4
+// 5 3
+	for (int i = 0; i < size; i++) {
+		is = 1;
+		for (int j = 0; j < size; j++) {
+			if ( relation[i].first == relation[j].second ) {
+				if( relation[i].first > relation[j].first ) {
+					is = 0;
+					break;
+				}
+			}
+		}
+
+		if(is == 1) {
+			for(int j = 0; j < index; j++) {
+				if (relation[i].first == min_elements[j]) {
+					is = 0;
+					break;
+				}
+			}
+			if(is == 1) {
+				min_elements[index] = relation[i].first;
+				index++;
+			}
+		}
+	}
+	qsort(min_elements, index, sizeof(int), cmpfunc);
+	return index;
 }
 
-int get_domain(pair* relation, int n, int* a) {
-	return 0;
+int get_domain(pair* relation, int size, int* domain) {
+	int index = 0, flag = 0;
+
+	for (int i = 0; i < size; i++) {
+		flag = 0;
+		for (int j = 0; j < index; j++) {
+			if( domain[j] == relation[i].first ) {
+				flag = 1;
+				break;
+			}
+		}
+		if (!flag) {
+			domain[index] = relation[i].first;
+			index++;
+		}
+
+		flag = 0;
+
+		for (int j = 0; j < index; j++) {
+			if( domain[j] == relation[i].second ) {
+				flag = 1;
+				break;
+			}
+		}
+		if (!flag) {
+			domain[index] = relation[i].second;
+			index++;
+		}
+
+	}
+	qsort(domain, index, sizeof(int), cmpfunc);
+	return index;
 }
 
 int composition (pair* A, int a, pair* B, int b, pair* C) {
-	return 0;
+	int index = 0, is = 0;
+	for (int i = 0; i < a; i++) {
+		for (int j = 0; j < b; j++) {
+			if (A[i].second == B[j].first) { //  x A y and y B z => x C z
+				is = 0;
+				for (int k = 0; k < index; k++) {
+					if( C[k].first == A[i].first && C[k].second == B[j].second ) { // relation exist
+						is = 1;
+						break;
+					} 
+				}
+				if (is == 0) {
+					C[index].first = A[i].first;
+					C[index].second = B[j].second;
+					index++;
+				}
+			}
+		}
+	}
+	return index;
 }
+
+/*\
+R
+7
+1 2
+2 3
+3 4
+3 2
+2 5
+1 5
+2 4
+
+S
+6
+2 4
+1 3
+5 4
+3 5
+3 1
+1 2
+*/
+
+/*
+1 4
+2 5
+2 1
+3 4
+2 4
+-1 4-
+*/
